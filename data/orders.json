@@ -1,0 +1,23 @@
+[
+  {
+    "id": "询价 001",
+    "tableNo": "未填写",
+    "time": "12:31",
+    "createdAt": "2026-05-19T04:31:47.856Z",
+    "status": "new",
+    "items": [
+      {
+        "name": "橙 O-302",
+        "spec": "样卡",
+        "spice": "3%",
+        "price": 0,
+        "qty": 1
+      }
+    ],
+    "note": "",
+    "count": 1,
+    "subtotal": 0,
+    "serviceFee": 0,
+    "total": 0
+  }
+]

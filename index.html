@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>三千彩环保 · 特凯隆色浆订购</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="menu-panel">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">特凯隆 · 免水洗染色色浆系列</p>
+            <h1>三千彩环保色浆订购</h1>
+          </div>
+          <button class="icon-button" id="clearCart" title="清空购物车" aria-label="清空购物车">
+            <span aria-hidden="true">×</span>
+          </button>
+        </header>
+
+        <div class="search-row">
+          <input id="searchInput" type="search" placeholder="搜索颜色、编号、类型" autocomplete="off" />
+          <button id="onlyHot" class="filter-button" type="button">推荐</button>
+        </div>
+
+        <nav class="category-tabs" aria-label="色号分类" id="categoryTabs"></nav>
+
+        <section class="dish-list" id="dishList" aria-live="polite"></section>
+      </section>
+
+      <aside class="cart-panel" aria-label="询价单">
+        <div class="cart-heading">
+          <div>
+            <p class="eyebrow">已选色号</p>
+            <h2>询价单</h2>
+          </div>
+          <span class="cart-count" id="cartCount">0</span>
+        </div>
+
+        <label class="table-box">
+          <span>公司 / 联系方式</span>
+          <input id="tableNo" type="text" value="" placeholder="公司名、手机号或微信" autocomplete="off" />
+        </label>
+
+        <div class="cart-list" id="cartList"></div>
+
+        <label class="note-box">
+          <span>需求备注</span>
+          <textarea id="orderNote" rows="3" placeholder="例如：用于棉布、先寄样卡、每个色号 1kg"></textarea>
+        </label>
+
+        <div class="summary">
+          <div>
+            <span>色号数</span>
+            <strong id="subtotal">0</strong>
+          </div>
+          <div>
+            <span>总数量</span>
+            <strong id="serviceFee">0</strong>
+          </div>
+          <div class="total">
+            <span>报价</span>
+            <strong id="totalPrice">待确认</strong>
+          </div>
+        </div>
+
+        <button class="submit-button" id="submitOrder" type="button">提交询价</button>
+
+        <section class="order-history" aria-label="已提交色号">
+          <div class="section-title">
+            <div>
+              <p class="eyebrow">已发送给商家</p>
+              <h2>已提交</h2>
+            </div>
+          </div>
+          <div class="submitted-list" id="submittedList">
+            <div class="empty-order">提交后会在这里看到询价明细</div>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

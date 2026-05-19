@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>三千彩环保 · 特凯隆色浆订购后台</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="admin-shell">
+      <header class="admin-topbar">
+        <div>
+          <p class="eyebrow">特凯隆 · 色浆询价</p>
+          <h1>三千彩环保询价后台</h1>
+        </div>
+        <a class="admin-link" href="./index.html">客户询价页</a>
+      </header>
+
+      <section class="admin-stats" aria-label="订单统计">
+        <div>
+          <span>新询价</span>
+          <strong id="newCount">0</strong>
+        </div>
+        <div>
+          <span>跟进中</span>
+          <strong id="cookingCount">0</strong>
+        </div>
+        <div>
+          <span>今日询价</span>
+          <strong id="totalCount">0</strong>
+        </div>
+      </section>
+
+      <section class="admin-orders" id="adminOrders" aria-live="polite"></section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./admin.js"></script>
+  </body>
+</html>
