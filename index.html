@@ -10,14 +10,44 @@
     <main class="app-shell">
       <section class="menu-panel">
         <header class="topbar">
-          <div>
-            <p class="eyebrow">特凯隆 · 免水洗染色色浆系列</p>
-            <h1>三千彩环保色浆订购</h1>
+          <div class="brand-heading">
+            <img class="brand-logo" src="./logo.svg" alt="三千彩纳米新材料有限公司" />
+            <div>
+              <p class="eyebrow">特凯隆 · 免水洗染色色浆系列</p>
+              <h1>三千彩环保色浆订购</h1>
+            </div>
           </div>
-          <button class="icon-button" id="clearCart" title="清空购物车" aria-label="清空购物车">
-            <span aria-hidden="true">×</span>
-          </button>
         </header>
+
+        <div class="customer-banner" id="customerBanner">
+          <strong>通用客户</strong>
+          <span>请填写公司 / 联系方式后下单</span>
+        </div>
+
+        <section class="company-info" aria-label="公司服务信息">
+          <div>
+            <strong>三千彩环保</strong>
+            <span>免水洗染色色浆 · 专属客户下单系统</span>
+          </div>
+          <div>
+            <strong>服务支持</strong>
+            <span>下单后业务员确认价格、规格与交期</span>
+          </div>
+          <div>
+            <strong>订单流转</strong>
+            <span>审核后进入生产处理，后台全程跟进</span>
+          </div>
+        </section>
+
+        <section class="frequent-section" id="frequentSection" hidden>
+          <div class="section-title compact-title">
+            <div>
+              <p class="eyebrow">客户常购</p>
+              <h2>常购色号</h2>
+            </div>
+          </div>
+          <div class="frequent-list" id="frequentList"></div>
+        </section>
 
         <div class="search-row">
           <input id="searchInput" type="search" placeholder="搜索颜色、编号、类型" autocomplete="off" />
@@ -29,25 +59,27 @@
         <section class="dish-list" id="dishList" aria-live="polite"></section>
       </section>
 
-      <aside class="cart-panel" aria-label="询价单">
+      <aside class="cart-panel" aria-label="订单">
         <div class="cart-heading">
           <div>
             <p class="eyebrow">已选色号</p>
-            <h2>询价单</h2>
+            <h2>订单</h2>
           </div>
           <span class="cart-count" id="cartCount">0</span>
         </div>
+        <button class="clear-order-button" id="clearCart" type="button">清空订单</button>
 
         <label class="table-box">
-          <span>公司 / 联系方式</span>
+          <span>下单客户 / 联系方式</span>
           <input id="tableNo" type="text" value="" placeholder="公司名、手机号或微信" autocomplete="off" />
         </label>
+        <div class="locked-customer" id="lockedCustomer"></div>
 
         <div class="cart-list" id="cartList"></div>
 
         <label class="note-box">
           <span>需求备注</span>
-          <textarea id="orderNote" rows="3" placeholder="例如：用于棉布、先寄样卡、每个色号 1kg"></textarea>
+          <textarea id="orderNote" rows="3" placeholder="例如：用于棉布、每个色号 60公斤"></textarea>
         </label>
 
         <div class="summary">
@@ -60,22 +92,22 @@
             <strong id="serviceFee">0</strong>
           </div>
           <div class="total">
-            <span>报价</span>
+            <span>合计</span>
             <strong id="totalPrice">待确认</strong>
           </div>
         </div>
 
-        <button class="submit-button" id="submitOrder" type="button">提交询价</button>
+        <button class="submit-button" id="submitOrder" type="button">提交订单</button>
 
         <section class="order-history" aria-label="已提交色号">
           <div class="section-title">
             <div>
               <p class="eyebrow">已发送给商家</p>
-              <h2>已提交</h2>
+              <h2>已下单</h2>
             </div>
           </div>
           <div class="submitted-list" id="submittedList">
-            <div class="empty-order">提交后会在这里看到询价明细</div>
+            <div class="empty-order">提交后会在这里看到订单明细</div>
           </div>
         </section>
       </aside>

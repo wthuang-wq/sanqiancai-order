@@ -3,17 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>三千彩环保 · 特凯隆色浆订购后台</title>
+    <title>老板 · 三千彩环保订单</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body data-role="all">
-    <main class="admin-shell">
+  <body data-role="owner" data-can-delete="false">
+    <main class="admin-shell role-shell">
       <header class="admin-topbar">
         <div class="brand-heading">
           <img class="brand-logo" src="./logo.svg" alt="三千彩纳米新材料有限公司" />
           <div>
-            <p class="eyebrow">特凯隆 · 色浆订单</p>
-            <h1>三千彩环保系统管理</h1>
+            <p class="eyebrow">内部流程</p>
+            <h1>老板</h1>
           </div>
         </div>
         <div class="admin-top-actions">
@@ -52,22 +52,10 @@
         <div id="customerList" class="customer-list"></div>
       </section>
 
-      <section class="admin-stats" aria-label="订单统计">
+      <section class="admin-stats role-stats" aria-label="老板待办">
         <div>
-          <span>买方待确认</span>
-          <strong id="newCount">0</strong>
-        </div>
-        <div>
-          <span>业务员</span>
-          <strong id="salesCount">0</strong>
-        </div>
-        <div>
-          <span>销售助理</span>
-          <strong id="cookingCount">0</strong>
-        </div>
-        <div>
-          <span>仓库/发货</span>
-          <strong id="totalCount">0</strong>
+          <span>待审批订单</span>
+          <strong id="ownerCount">0</strong>
         </div>
       </section>
 
@@ -84,7 +72,6 @@
 
       <section class="admin-orders" id="adminOrders" aria-live="polite"></section>
     </main>
-
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="./admin.js"></script>
   </body>

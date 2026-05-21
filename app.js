@@ -1,5 +1,5 @@
 const categories = ["全部", "黄色系", "红色系", "紫色系", "橙色系", "蓝色系", "黑色系"];
-const packageOptions = ["样卡", "1kg", "5kg", "25kg"];
+const packageOptions = ["60公斤", "1公斤", "5公斤", "25公斤", "自定义"];
 
 const dishes = [
   ["y102", "柠檬黄", "Y-102", "黄色系", "#ffe900", "3%", "S", "4", "4.5", "4", "4", true],
@@ -38,9 +38,8 @@ const dishes = [
   hot,
   icon: number,
   gradient: `linear-gradient(135deg, ${hex}, ${hex})`,
-  desc: `染色深度 ${deep} · 类型 ${type} · 牢度：洗涤 ${washing}，摩擦 ${rubbing}，升华/180度 ${sublimation}，日晒 ${light}`,
+  desc: `类型 ${type} · 牢度：洗涤 ${washing}，摩擦 ${rubbing}，升华/180度 ${sublimation}，日晒 ${light}`,
   specs: packageOptions,
-  spice: [deep],
   deep,
   type,
   fastness: { washing, rubbing, sublimation, light },
@@ -52,11 +51,17 @@ const state = {
   onlyHot: false,
   cart: new Map(),
   submittedOrders: [],
+  settings: { showPrices: false },
+  customer: null,
+  customerCode: new URLSearchParams(window.location.search).get("customer") || "",
 };
 
 const els = {
   categoryTabs: document.querySelector("#categoryTabs"),
   dishList: document.querySelector("#dishList"),
+  customerBanner: document.querySelector("#customerBanner"),
+  frequentSection: document.querySelector("#frequentSection"),
+  frequentList: document.querySelector("#frequentList"),
   cartList: document.querySelector("#cartList"),
   cartCount: document.querySelector("#cartCount"),
   subtotal: document.querySelector("#subtotal"),
@@ -67,6 +72,7 @@ const els = {
   searchInput: document.querySelector("#searchInput"),
   onlyHot: document.querySelector("#onlyHot"),
   tableNo: document.querySelector("#tableNo"),
+  lockedCustomer: document.querySelector("#lockedCustomer"),
   orderNote: document.querySelector("#orderNote"),
   submittedList: document.querySelector("#submittedList"),
   toast: document.querySelector("#toast"),
@@ -86,21 +92,65 @@ function escapeHtml(value) {
 }
 
 function money(value) {
-  return `¥${value.toFixed(value % 1 ? 1 : 0)}`;
+  return `¥${Number(value).toFixed(value % 1 ? 2 : 0)}`;
 }
 
-function cartKey(dishId, spec, spice) {
-  return `${dishId}__${spec}__${spice}`;
+function formatOrderDate(order) {
+  const date = new Date(order.createdAt);
+  if (Number.isNaN(date.getTime())) return order.time || "";
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${order.time || date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+function cartKey(dishId, spec) {
+  return `${dishId}__${spec}`;
+}
+
+function shouldShowPrices() {
+  return Boolean(state.settings.showPrices && state.customer?.showPrices);
+}
+
+function getUnitPrice(dish) {
+  const price = state.customer?.prices?.[dish.number];
+  return Number.isFinite(Number(price)) ? Number(price) : null;
+}
+
+function getSpecKg(spec) {
+  const match = String(spec).match(/(\d+(?:\.\d+)?)\s*(kg|公斤)/i);
+  return match ? Number(match[1]) : 0;
+}
+
+function getLineTotal(item) {
+  if (!shouldShowPrices() || item.unitPrice === null) return null;
+  const kg = getSpecKg(item.spec);
+  return item.unitPrice * (kg || 1) * item.qty;
+}
+
+function getPriceText(value) {
+  return value === null ? "下单" : money(value);
+}
+
+function getDishPriceText(dish) {
+  const unitPrice = getUnitPrice(dish);
+  return unitPrice === null ? "" : `${money(unitPrice)} / 公斤`;
 }
 
 function getCartStats() {
   let count = 0;
+  let kg = 0;
+  let total = 0;
+  let hasPrice = false;
 
   state.cart.forEach((item) => {
     count += item.qty;
+    kg += getSpecKg(item.spec) * item.qty;
+    const lineTotal = getLineTotal(item);
+    if (lineTotal !== null) {
+      hasPrice = true;
+      total += lineTotal;
+    }
   });
 
-  return { count, subtotal: state.cart.size, serviceFee: count, total: 0 };
+  return { count, subtotal: state.cart.size, serviceFee: kg, total: hasPrice ? total : null };
 }
 
 function renderCategories() {
@@ -116,16 +166,19 @@ function renderCategories() {
 }
 
 function getFilteredDishes() {
-  return dishes.filter((dish) => {
-    const matchesCategory = state.category === "全部" || dish.category === state.category;
-    const matchesQuery =
-      dish.name.includes(state.query) ||
-      dish.number.toLowerCase().includes(state.query.toLowerCase()) ||
-      dish.type.toLowerCase().includes(state.query.toLowerCase()) ||
-      dish.desc.includes(state.query);
-    const matchesHot = !state.onlyHot || dish.hot;
-    return matchesCategory && matchesQuery && matchesHot;
-  });
+  const agreedNumbers = new Set((state.customer?.agreedNumbers || []).map((item) => String(item).toUpperCase()));
+  return dishes
+    .filter((dish) => {
+      const matchesCategory = state.category === "全部" || dish.category === state.category;
+      const matchesQuery =
+        dish.name.includes(state.query) ||
+        dish.number.toLowerCase().includes(state.query.toLowerCase()) ||
+        dish.type.toLowerCase().includes(state.query.toLowerCase()) ||
+        dish.desc.includes(state.query);
+      const matchesHot = !state.onlyHot || dish.hot;
+      return matchesCategory && matchesQuery && matchesHot;
+    })
+    .sort((a, b) => Number(agreedNumbers.has(b.number)) - Number(agreedNumbers.has(a.number)));
 }
 
 function renderDishes() {
@@ -138,37 +191,30 @@ function renderDishes() {
 
   els.dishList.innerHTML = filtered
     .map(
-      (dish) => `
-      <article class="dish-card" data-id="${dish.id}">
-        <div class="dish-photo" style="--photo: ${dish.gradient}">
-          ${dish.hot ? '<strong class="tag">推荐</strong>' : ""}
-          <span>${dish.icon}</span>
-        </div>
+      (dish) => {
+        const agreed = (state.customer?.agreedNumbers || []).includes(dish.number);
+        return `
+      <article class="dish-card compact-dish-card ${agreed ? "agreed-dish" : ""}" data-id="${dish.id}">
         <div class="dish-body">
           <div class="dish-name-row">
-            <h3 class="dish-name">${dish.name}</h3>
-            <strong class="price">询价</strong>
+            <h3 class="dish-name">${dish.name}${agreed ? `<span class="agreed-badge">已沟通</span>` : ""}</h3>
+            ${getDishPriceText(dish) ? `<strong class="price">${getDishPriceText(dish)}</strong>` : ""}
           </div>
-          <p class="dish-desc">${dish.desc}</p>
           <label class="option-row">
-            <span>包装</span>
+            <span>规格</span>
             <select data-role="spec">
               ${dish.specs.map((spec) => `<option>${spec}</option>`).join("")}
             </select>
           </label>
-          <label class="option-row">
-            <span>深度</span>
-            <select data-role="spice">
-              ${dish.spice.map((spice) => `<option>${spice}</option>`).join("")}
-            </select>
-          </label>
+          <input class="custom-spec" data-role="custom-spec" type="text" placeholder="输入规格，例如 120公斤" />
           <div class="dish-action-row">
-            <span>${dish.category}</span>
-            <button class="add-button" type="button" data-add="${dish.id}">加入询价</button>
+            <span></span>
+            <button class="add-button" type="button" data-add="${dish.id}">加入订单</button>
           </div>
         </div>
       </article>
-    `,
+    `;
+      },
     )
     .join("");
 }
@@ -186,9 +232,9 @@ function renderCart() {
           <div class="cart-item-main">
             <div>
               <p class="cart-item-title">${item.name}</p>
-              <p class="cart-item-meta">${item.spec} · ${item.spice}</p>
+              <p class="cart-item-meta">${item.spec}${item.unitPrice !== null ? ` · ${money(item.unitPrice)} / 公斤` : ""}</p>
             </div>
-            <strong>询价</strong>
+            <strong>${getPriceText(getLineTotal(item))}</strong>
           </div>
           <div class="cart-item-footer">
             <span>${item.qty} 份需求</span>
@@ -207,14 +253,14 @@ function renderCart() {
   const stats = getCartStats();
   els.cartCount.textContent = stats.count;
   els.subtotal.textContent = `${stats.subtotal} 个`;
-  els.serviceFee.textContent = `${stats.serviceFee} 份`;
-  els.totalPrice.textContent = stats.count ? "待确认" : "待确认";
+  els.serviceFee.textContent = stats.serviceFee ? `${stats.serviceFee} 公斤` : `${stats.count} 份`;
+  els.totalPrice.textContent = stats.total === null ? "下单后确认" : money(stats.total);
   els.submitOrder.disabled = stats.count === 0;
 }
 
 function renderSubmittedOrders() {
   if (!state.submittedOrders.length) {
-    els.submittedList.innerHTML = `<div class="empty-order">提交后会在这里看到询价明细</div>`;
+    els.submittedList.innerHTML = `<div class="empty-order">提交后会在这里看到订单明细</div>`;
     return;
   }
 
@@ -224,7 +270,7 @@ function renderSubmittedOrders() {
         <article class="submitted-order">
           <div class="submitted-order-head">
             <strong>${escapeHtml(order.id)}</strong>
-            <span>${escapeHtml(order.tableNo)} · ${escapeHtml(order.time)}</span>
+            <span>${escapeHtml(order.tableNo)} · ${escapeHtml(formatOrderDate(order))}</span>
           </div>
           <div class="submitted-items">
             ${order.items
@@ -233,9 +279,9 @@ function renderSubmittedOrders() {
                   <div class="submitted-item">
                     <div>
                       <p>${escapeHtml(item.name)} × ${item.qty}</p>
-                      <span>${escapeHtml(item.spec)} · ${escapeHtml(item.spice)}</span>
+                      <span>${escapeHtml(item.spec)}${item.unitPrice !== null ? ` · ${money(item.unitPrice)} / 公斤` : ""}</span>
                     </div>
-                    <strong>询价</strong>
+                    <strong>${getPriceText(item.lineTotal ?? null)}</strong>
                   </div>
                 `,
               )
@@ -244,8 +290,13 @@ function renderSubmittedOrders() {
           ${order.note ? `<p class="submitted-note">备注：${escapeHtml(order.note)}</p>` : ""}
           <div class="submitted-total">
             <span>共 ${order.count} 份需求</span>
-            <strong>待报价</strong>
+            <strong>${order.total ? money(order.total) : "下单后确认"}</strong>
           </div>
+          ${
+            order.customerCode
+              ? `<a class="boss-link" href="./boss.html?customer=${encodeURIComponent(order.customerCode)}">发给老板确认</a>`
+              : ""
+          }
         </article>
       `,
     )
@@ -255,9 +306,62 @@ function renderSubmittedOrders() {
 function render() {
   renderCategories();
   renderDishes();
+  renderFrequentDishes();
   renderCart();
   renderSubmittedOrders();
   els.onlyHot.classList.toggle("active", state.onlyHot);
+}
+
+function renderFrequentDishes() {
+  const frequentNumbers = state.customer?.frequent || [];
+  const frequentDishes = frequentNumbers
+    .map((number) => dishes.find((dish) => dish.number === number))
+    .filter(Boolean);
+
+  if (!frequentDishes.length) {
+    els.frequentSection.hidden = true;
+    els.frequentList.innerHTML = "";
+    return;
+  }
+
+  els.frequentSection.hidden = false;
+  els.frequentList.innerHTML = frequentDishes
+    .map(
+      (dish) => `
+        <button type="button" data-frequent-add="${dish.id}">
+          <span>${escapeHtml(dish.name)}</span>
+          <strong>${getPriceText(getUnitPrice(dish))}${getUnitPrice(dish) !== null ? " / 公斤" : ""}</strong>
+        </button>
+      `,
+    )
+    .join("");
+}
+
+function renderCustomerBanner() {
+  if (state.customer) {
+    els.customerBanner.innerHTML = `
+      <strong>${escapeHtml(state.customer.name)}</strong>
+      <span>${escapeHtml(state.customer.contact || "专属客户价格")}</span>
+    `;
+    if (!els.tableNo.value) {
+      els.tableNo.value = `${state.customer.name}${state.customer.contact ? ` ${state.customer.contact}` : ""}`;
+    }
+    els.tableNo.closest(".table-box").hidden = true;
+    els.lockedCustomer.hidden = false;
+    els.lockedCustomer.innerHTML = `
+      <span>下单客户</span>
+      <strong>${escapeHtml(state.customer.name)}</strong>
+      ${state.customer.contact ? `<small>${escapeHtml(state.customer.contact)}</small>` : ""}
+    `;
+    return;
+  }
+
+  els.customerBanner.innerHTML = `
+    <strong>通用客户</strong>
+    <span>请填写公司 / 联系方式后下单</span>
+  `;
+  els.tableNo.closest(".table-box").hidden = false;
+  els.lockedCustomer.hidden = true;
 }
 
 function showToast(message) {
@@ -276,29 +380,69 @@ els.categoryTabs.addEventListener("click", (event) => {
   render();
 });
 
+els.dishList.addEventListener("change", (event) => {
+  const select = event.target.closest('select[data-role="spec"]');
+  if (!select) return;
+  const card = select.closest(".dish-card");
+  card.classList.toggle("has-custom-spec", select.value === "自定义");
+});
+
 els.dishList.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-add]");
   if (!button) return;
 
   const card = button.closest(".dish-card");
   const dish = dishes.find((item) => item.id === button.dataset.add);
-  const spec = card.querySelector('[data-role="spec"]').value;
-  const spice = card.querySelector('[data-role="spice"]').value;
-  const key = cartKey(dish.id, spec, spice);
+  const selectedSpec = card.querySelector('[data-role="spec"]').value;
+  const customSpec = card.querySelector('[data-role="custom-spec"]').value.trim();
+  const spec = selectedSpec === "自定义" ? customSpec : selectedSpec;
+
+  if (!spec) {
+    showToast("请先填写自定义规格");
+    return;
+  }
+
+  const key = cartKey(dish.id, spec);
   const existing = state.cart.get(key);
+  const unitPrice = getUnitPrice(dish);
 
   state.cart.set(key, {
     key,
     dishId: dish.id,
+    number: dish.number,
     name: dish.name,
-    price: dish.price,
+    price: unitPrice || 0,
+    unitPrice,
     spec,
-    spice,
     qty: existing ? existing.qty + 1 : 1,
   });
 
   renderCart();
-  showToast(`已加入询价：${dish.name}`);
+  showToast(`已加入订单：${dish.name}`);
+});
+
+els.frequentList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-frequent-add]");
+  if (!button) return;
+  const dish = dishes.find((item) => item.id === button.dataset.frequentAdd);
+  const spec = "60公斤";
+  const key = cartKey(dish.id, spec);
+  const existing = state.cart.get(key);
+  const unitPrice = getUnitPrice(dish);
+
+  state.cart.set(key, {
+    key,
+    dishId: dish.id,
+    number: dish.number,
+    name: dish.name,
+    price: unitPrice || 0,
+    unitPrice,
+    spec,
+    qty: existing ? existing.qty + 1 : 1,
+  });
+
+  renderCart();
+  showToast(`已加入订单：${dish.name}`);
 });
 
 els.cartList.addEventListener("click", (event) => {
@@ -332,7 +476,7 @@ els.clearCart.addEventListener("click", () => {
   if (!state.cart.size) return;
   state.cart.clear();
   renderCart();
-  showToast("询价单已清空");
+  showToast("订单已清空");
 });
 
 els.submitOrder.addEventListener("click", () => {
@@ -346,8 +490,10 @@ async function submitOrder() {
   const note = els.orderNote.value.trim();
   const tableNo = els.tableNo.value.trim() || "未填写";
   const orderPayload = {
+    customerCode: state.customer?.code || state.customerCode,
+    customerName: state.customer?.name || "",
     tableNo,
-    items: [...state.cart.values()].map((item) => ({ ...item })),
+    items: [...state.cart.values()].map((item) => ({ ...item, lineTotal: getLineTotal(item) })),
     count,
     subtotal,
     serviceFee,
@@ -363,7 +509,7 @@ async function submitOrder() {
   els.orderNote.value = "";
   renderCart();
   renderSubmittedOrders();
-  showToast(`提交成功：${count} 份需求${note ? "，已备注" : ""}`);
+  showToast(`订单已提交：${order.id}，等待老板确认`);
 }
 
 async function saveOrder(orderPayload) {
@@ -382,7 +528,7 @@ async function saveOrder(orderPayload) {
   } catch (error) {
     return {
       ...orderPayload,
-      id: `本机询价 ${String(state.submittedOrders.length + 1).padStart(2, "0")}`,
+      id: `本机订单 ${String(state.submittedOrders.length + 1).padStart(2, "0")}`,
       status: "new",
       time: new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }),
       createdAt: new Date().toISOString(),
@@ -390,4 +536,23 @@ async function saveOrder(orderPayload) {
   }
 }
 
-render();
+async function loadConfig() {
+  try {
+    const url = state.customerCode ? `/api/config?customer=${encodeURIComponent(state.customerCode)}` : "/api/config";
+    const response = await fetch(url);
+    if (!response.ok) return;
+    const config = await response.json();
+    state.settings = config.settings || state.settings;
+    state.customer = config.customer || null;
+  } catch (error) {
+    state.settings = { showPrices: false };
+  }
+}
+
+async function init() {
+  await loadConfig();
+  renderCustomerBanner();
+  render();
+}
+
+init();
