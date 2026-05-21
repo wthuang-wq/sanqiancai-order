@@ -43,7 +43,7 @@ const canDeleteOrders = document.body.dataset.canDelete !== "false";
 let latestOrders = [];
 let ordersTimer = null;
 
-const productList = [
+const defaultProductList = [
   ["柠檬黄", "Y-102"],
   ["嫩黄", "Y-103"],
   ["荧光黄", "Y-106"],
@@ -71,6 +71,8 @@ const productList = [
   ["黑", "K-805"],
   ["黑", "K-900"],
 ];
+let productList = [...defaultProductList];
+let customProductNumbers = new Set();
 
 const els = {
   orders: document.querySelector("#adminOrders"),
@@ -88,10 +90,17 @@ const els = {
   customerForm: document.querySelector("#customerForm"),
   customerCode: document.querySelector("#customerCode"),
   customerName: document.querySelector("#customerName"),
-  customerContact: document.querySelector("#customerContact"),
+  customerContactName: document.querySelector("#customerContactName"),
+  customerPhone: document.querySelector("#customerPhone"),
+  customerAddress: document.querySelector("#customerAddress"),
   customerShowPrices: document.querySelector("#customerShowPrices"),
   priceEditor: document.querySelector("#priceEditor"),
   customerList: document.querySelector("#customerList"),
+  productForm: document.querySelector("#productForm"),
+  productColor: document.querySelector("#productColor"),
+  productNumber: document.querySelector("#productNumber"),
+  productCategory: document.querySelector("#productCategory"),
+  productList: document.querySelector("#productList"),
   toast: document.querySelector("#toast"),
 };
 
@@ -135,6 +144,15 @@ function getOrderTotalKg(order) {
   return (order.items || []).reduce((sum, item) => sum + getSpecKg(item.spec) * Number(item.qty || 0), 0);
 }
 
+function formatWeight(kg) {
+  return `${Number(kg || 0).toLocaleString("zh-CN", { maximumFractionDigits: 2 })} 公斤`;
+}
+
+function extractPhone(value) {
+  const match = String(value || "").match(/(?:\+?86[-\s]?)?1[3-9]\d[-\s]?\d{4}[-\s]?\d{4}/);
+  return match ? match[0].replace(/[-\s]/g, "") : "";
+}
+
 function getTodayKey() {
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -151,6 +169,10 @@ function makeDeliveryNoteHtml(order) {
   const totalKg = items.reduce((sum, item) => sum + getSpecKg(item.spec) * Number(item.qty || 0), 0);
   const totalAmount = items.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0);
   const summaryKgText = totalKg ? `${totalKg} KG` : "";
+  const receiverName = order.customerName || order.tableNo || "未填写";
+  const receiverAddress = order.customerAddress || "";
+  const receiverContactName = order.customerContactName || "";
+  const receiverPhone = order.customerPhone || extractPhone(order.customerContact || order.tableNo || "");
   const rows = items
     .map(
       (item, index) => `
@@ -229,9 +251,11 @@ function makeDeliveryNoteHtml(order) {
           </div>
 
           <div class="meta">
-            <div>收货单位：<span class="line">${escapeHtml(order.customerName || order.tableNo || "未填写")}</span></div>
+            <div>收货单位：<span class="line">${escapeHtml(receiverName)}</span></div>
             <div>日期：<span class="line">${escapeHtml(dateText)}</span></div>
-            <div>收货地址：<span class="line">${escapeHtml(order.tableNo || "")}</span></div>
+            <div>收货地址：<span class="line">${escapeHtml(receiverAddress)}</span></div>
+            <div>联系人：<span class="line">${escapeHtml(receiverContactName)}</span></div>
+            <div>联系电话：<span class="line">${escapeHtml(receiverPhone)}</span></div>
             <div>备注：<span class="line">${escapeHtml(order.note || "")}</span></div>
           </div>
 
@@ -282,7 +306,6 @@ function getDeliveryInputValues(orderId) {
   const escapedId = CSS.escape(orderId);
   return {
     deliveryQuantity: document.querySelector(`[data-delivery-qty="${escapedId}"]`)?.value.trim() || "",
-    shortageReason: document.querySelector(`[data-shortage-reason="${escapedId}"]`)?.value.trim() || "",
   };
 }
 
@@ -304,7 +327,6 @@ function printDeliveryNote(orderId) {
   const noteOrder = {
     ...order,
     deliveryQuantity: inputValues.deliveryQuantity || order.deliveryQuantity || "",
-    shortageReason: inputValues.shortageReason || order.shortageReason || "",
   };
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
@@ -454,6 +476,18 @@ async function loadCustomers() {
   renderCustomers(customers);
 }
 
+async function loadProducts() {
+  if (!els.productList && !els.priceEditor) return;
+  const products = await requestJson("/api/products");
+  customProductNumbers = new Set(products.map((product) => product.number));
+  productList = [
+    ...defaultProductList,
+    ...products.map((product) => [product.color, product.number, product.category || "其他"]),
+  ];
+  renderPriceEditor();
+  renderProducts(products);
+}
+
 async function loadOrders() {
   try {
     const orders = await requestJson("/api/orders");
@@ -490,7 +524,9 @@ function renderCustomers(customers) {
           <img src="${qrUrl}" alt="${escapeHtml(customer.name)} 客户二维码" />
           <div>
             <strong>${escapeHtml(customer.name)}</strong>
-            <span>${escapeHtml(customer.code)} · ${escapeHtml(customer.contact || "未填联系方式")}</span>
+            <span>${escapeHtml(customer.code)} · ${escapeHtml(customer.contactName || customer.contact || "未填联系人")}</span>
+            <span>电话：${escapeHtml(customer.phone || extractPhone(customer.contact) || "未填电话")}</span>
+            <span>地址：${escapeHtml(customer.address || "未填地址")}</span>
             <span>${customer.showPrices ? "该客户显示价格" : "该客户隐藏价格"}</span>
             <span>已沟通：${escapeHtml((customer.agreedNumbers || []).join("、") || "未设置")}</span>
             <span>常购：系统按订单记录自动统计</span>
@@ -506,6 +542,26 @@ function renderCustomers(customers) {
         </article>
       `;
     })
+    .join("");
+}
+
+function renderProducts(products) {
+  if (!els.productList) return;
+  if (!products.length) {
+    els.productList.innerHTML = `<div class="admin-empty compact">还没有新增产品</div>`;
+    return;
+  }
+
+  els.productList.innerHTML = products
+    .map(
+      (product) => `
+        <article class="product-row">
+          <strong>${escapeHtml(product.color)} ${escapeHtml(product.number)}</strong>
+          <span>${escapeHtml(product.category || "其他")}</span>
+          <button class="danger-button" type="button" data-delete-product="${escapeHtml(product.number)}">删除</button>
+        </article>
+      `,
+    )
     .join("");
 }
 
@@ -554,13 +610,13 @@ function renderOrders(orders) {
 
           ${order.note ? `<p class="submitted-note">备注：${escapeHtml(order.note)}</p>` : ""}
           ${
-            currentRole === "stock" && (order.deliveryQuantity || order.shortageReason)
-              ? `<p class="submitted-note">发货情况：${escapeHtml(order.deliveryQuantity || "未填")}；${escapeHtml(order.shortageReason || "无备注")}</p>`
+            currentRole === "stock" && order.deliveryQuantity
+              ? `<p class="submitted-note">发货数量：${escapeHtml(order.deliveryQuantity)}</p>`
               : ""
           }
 
           <div class="submitted-total">
-            <span>共 ${order.count} 份需求</span>
+            <span>总重量 ${formatWeight(order.serviceFee || getOrderTotalKg(order))}</span>
             <strong>${order.total ? money(order.total) : "下单后确认"}</strong>
           </div>
 
@@ -568,12 +624,8 @@ function renderOrders(orders) {
             canEditDelivery(order)
               ? `<div class="delivery-fields">
                   <label>
-                    <span>实际发货数量</span>
-                    <input data-delivery-qty="${escapeHtml(order.id)}" value="${escapeHtml(order.deliveryQuantity || "")}" placeholder="例如 120公斤" />
-                  </label>
-                  <label>
-                    <span>缺货说明</span>
-                    <input data-shortage-reason="${escapeHtml(order.id)}" value="${escapeHtml(order.shortageReason || "")}" placeholder="例如 只能发 60公斤" />
+                    <span>发货数量</span>
+                    <input data-delivery-qty="${escapeHtml(order.id)}" value="${escapeHtml(order.deliveryQuantity || "")}" placeholder="例如 60公斤" />
                   </label>
                 </div>`
               : ""
@@ -582,7 +634,7 @@ function renderOrders(orders) {
           <div class="admin-actions">
             ${
               canEditDelivery(order)
-                ? `<button class="secondary-action-button" type="button" data-status="${escapeHtml(order.status)}" data-id="${escapeHtml(order.id)}">保存发货信息</button>`
+                ? `<button class="secondary-action-button" type="button" data-status="${escapeHtml(order.status)}" data-id="${escapeHtml(order.id)}">保存发货数量</button>`
                 : ""
             }
             ${(statusActions[order.status] || [])
@@ -661,7 +713,9 @@ els.customerForm?.addEventListener("submit", async (event) => {
       body: JSON.stringify({
         code: customerCode,
         name: els.customerName.value.trim(),
-        contact: els.customerContact.value.trim(),
+        contactName: els.customerContactName?.value.trim() || "",
+        phone: els.customerPhone?.value.trim() || "",
+        address: els.customerAddress?.value.trim() || "",
         agreedNumbers: collectAgreedNumbers(),
         showPrices: els.customerShowPrices.checked,
         prices: collectPrices(),
@@ -711,9 +765,46 @@ els.customerList?.addEventListener("click", async (event) => {
     if (!customer) return;
     els.customerCode.value = customer.code;
     els.customerName.value = customer.name;
-    els.customerContact.value = customer.contact || "";
+    if (els.customerContactName) els.customerContactName.value = customer.contactName || customer.contact || "";
+    if (els.customerPhone) els.customerPhone.value = customer.phone || extractPhone(customer.contact);
+    if (els.customerAddress) els.customerAddress.value = customer.address || "";
     els.customerShowPrices.checked = Boolean(customer.showPrices);
     renderPriceEditor(customer.prices);
+  }
+});
+
+els.productForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    await requestJson("/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        color: els.productColor.value.trim(),
+        number: els.productNumber.value.trim(),
+        category: els.productCategory.value,
+      }),
+    });
+    els.productForm.reset();
+    showToast("产品已添加");
+    await loadProducts();
+    await loadCustomers();
+  } catch (error) {
+    showToast("产品添加失败，请检查名称和编号");
+  }
+});
+
+els.productList?.addEventListener("click", async (event) => {
+  const deleteButton = event.target.closest("[data-delete-product]");
+  if (!deleteButton) return;
+  const number = deleteButton.dataset.deleteProduct;
+  if (!window.confirm(`确定删除 ${number} 吗？`)) return;
+  try {
+    await requestJson(`/api/products/${encodeURIComponent(number)}`, { method: "DELETE" });
+    showToast("产品已删除");
+    await loadProducts();
+  } catch (error) {
+    showToast("删除失败，请稍后再试");
   }
 });
 
@@ -748,11 +839,10 @@ els.orders?.addEventListener("click", async (event) => {
     const deliveryQty =
       inputValues.deliveryQuantity ||
       (button.dataset.status === "done" && order ? `${getOrderTotalKg(order)}公斤` : "");
-    const shortageReason = inputValues.shortageReason;
     await requestJson(`/api/orders/${encodeURIComponent(button.dataset.id)}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: button.dataset.status, deliveryQuantity: deliveryQty, shortageReason }),
+      body: JSON.stringify({ status: button.dataset.status, deliveryQuantity: deliveryQty }),
     });
     showToast("订单状态已更新");
     await loadOrders();
@@ -829,10 +919,11 @@ async function ensureLogin() {
 
 async function init() {
   await ensureLogin();
-  renderPriceEditor();
   document.querySelectorAll("[data-role-link]").forEach((link) => {
     link.classList.toggle("active", link.dataset.roleLink === currentRole);
   });
+  await loadProducts();
+  renderPriceEditor();
   await Promise.all([loadSettings(), loadCustomers(), loadOrders()]);
   ordersTimer = window.setInterval(loadOrders, 5000);
 }

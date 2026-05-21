@@ -9,9 +9,12 @@ const backupDir = path.join(dataDir, "backups");
 const ordersFile = path.join(dataDir, "orders.json");
 const customersFile = path.join(dataDir, "customers.json");
 const settingsFile = path.join(dataDir, "settings.json");
+const productsFile = path.join(dataDir, "products.json");
 const port = Number(process.env.PORT || 4173);
 const sessions = new Map();
 const localDefaultPassword = !process.env.PORT && process.env.NODE_ENV !== "production" ? "123456" : "";
+const authRequired = process.env.DISABLE_AUTH === "1" ? false : Boolean(process.env.PORT || process.env.FORCE_AUTH === "1");
+const localBypassSession = { role: "admin", name: "私域免登录", createdAt: Date.now() };
 
 const accounts = {
   sales: { password: process.env.SALES_PASSWORD || localDefaultPassword, role: "sales", name: "业务员" },
@@ -57,6 +60,7 @@ async function ensureStore() {
   await ensureJsonFile(ordersFile, []);
   await ensureJsonFile(customersFile, []);
   await ensureJsonFile(settingsFile, { showPrices: false });
+  await ensureJsonFile(productsFile, []);
 }
 
 async function ensureJsonFile(filePath, fallback) {
@@ -114,6 +118,14 @@ async function writeSettings(settings) {
   await writeJsonFile(settingsFile, settings);
 }
 
+async function readProducts() {
+  return readJsonFile(productsFile, []);
+}
+
+async function writeProducts(products) {
+  await writeJsonFile(productsFile, products);
+}
+
 function readJsonBody(request) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -158,6 +170,7 @@ function parseCookies(request) {
 }
 
 function getSession(request) {
+  if (!authRequired) return localBypassSession;
   const token = parseCookies(request).sqc_session;
   if (!token) return null;
   return sessions.get(token) || null;
@@ -232,7 +245,9 @@ function makeExportCsv({ settings, customers, orders }) {
   const customerRows = customers.map((customer) => [
     customer.code,
     customer.name,
-    customer.contact,
+    customer.contactName || customer.contact,
+    customer.phone,
+    customer.address,
     Object.entries(customer.prices || {})
       .map(([code, price]) => `${code}=${price}`)
       .join("; "),
@@ -256,7 +271,7 @@ function makeExportCsv({ settings, customers, orders }) {
 
   return [
     makeCsvSection("设置", ["前台显示价格"], [[settings.showPrices ? "是" : "否"]]),
-    makeCsvSection("客户", ["客户编号", "客户名称", "联系方式", "专属单价"], customerRows),
+    makeCsvSection("客户", ["客户编号", "客户名称", "联系人", "联系电话", "收货地址", "专属单价"], customerRows),
     makeCsvSection("订单", ["订单号", "状态", "客户", "时间", "产品", "规格", "数量", "单价/公斤", "行金额", "订单金额", "备注"], orderRows),
   ].join("\n");
 }
@@ -301,6 +316,11 @@ function getOrderStats(items) {
   return { count, subtotal, serviceFee: kg, total: subtotal };
 }
 
+function extractPhone(value) {
+  const match = String(value || "").match(/(?:\+?86[-\s]?)?1[3-9]\d[-\s]?\d{4}[-\s]?\d{4}/);
+  return match ? match[0].replace(/[-\s]/g, "") : "";
+}
+
 function makePublicOrder(payload, orders) {
   if (!Array.isArray(payload.items) || payload.items.length === 0) {
     throw new Error("Missing items");
@@ -315,6 +335,9 @@ function makePublicOrder(payload, orders) {
     id: `订单 ${String(orders.length + 1).padStart(3, "0")}`,
     customerCode,
     customerName: String(payload.customerName || "").slice(0, 80),
+    customerContactName: String(payload.customerContactName || payload.customerContact || "").slice(0, 80),
+    customerPhone: String(payload.customerPhone || extractPhone(payload.customerContact || payload.tableNo || "")).slice(0, 40),
+    customerAddress: String(payload.customerAddress || "").slice(0, 160),
     tableNo: String(payload.tableNo || "未填写").slice(0, 80),
     time: createdAt.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }),
     createdAt: createdAt.toISOString(),
@@ -395,12 +418,64 @@ async function handleApi(request, response, url) {
     const settings = await readSettings();
     const customers = await readCustomers();
     const orders = await readOrders();
+    const products = await readProducts();
     const customerCode = url.searchParams.get("customer") || "";
     const customer = customers.find((item) => item.code === customerCode) || null;
     if (customer) {
       customer.frequent = getFrequentNumbers(orders, customer.code);
     }
-    sendJson(response, 200, { settings, customer });
+    sendJson(response, 200, { settings, customer, products });
+    return true;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/products") {
+    if (!requireSession(request, response, ["assistant", "owner", "admin"])) return true;
+    sendJson(response, 200, await readProducts());
+    return true;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/products") {
+    if (!requireSession(request, response, ["assistant", "owner", "admin"])) return true;
+    const payload = await readJsonBody(request);
+    const color = String(payload.color || "").trim();
+    const number = String(payload.number || "").trim().toUpperCase();
+    const category = String(payload.category || "").trim() || "其他";
+
+    if (!color || !number) {
+      sendJson(response, 400, { error: "Missing product color or number" });
+      return true;
+    }
+
+    const products = await readProducts();
+    const product = {
+      id: number.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      color: color.slice(0, 40),
+      number: number.slice(0, 30),
+      category: category.slice(0, 20),
+    };
+    const index = products.findIndex((item) => item.number === product.number);
+    if (index >= 0) {
+      products[index] = product;
+    } else {
+      products.unshift(product);
+    }
+    await writeProducts(products);
+    sendJson(response, 201, product);
+    return true;
+  }
+
+  const productMatch = url.pathname.match(/^\/api\/products\/([^/]+)$/);
+  if (request.method === "DELETE" && productMatch) {
+    if (!requireSession(request, response, ["assistant", "owner", "admin"])) return true;
+    const number = decodeURIComponent(productMatch[1]).toUpperCase();
+    const products = await readProducts();
+    const nextProducts = products.filter((item) => item.number !== number);
+    if (nextProducts.length === products.length) {
+      sendJson(response, 404, { error: "Product not found" });
+      return true;
+    }
+    await writeProducts(nextProducts);
+    sendJson(response, 200, { ok: true });
     return true;
   }
 
@@ -437,10 +512,14 @@ async function handleApi(request, response, url) {
     }
 
     const customers = await readCustomers();
+    const legacyContact = String(payload.contact || "").trim();
     const customer = {
       code: code.slice(0, 40),
       name: name.slice(0, 80),
-      contact: String(payload.contact || "").slice(0, 80),
+      contactName: String(payload.contactName || legacyContact).slice(0, 80),
+      phone: String(payload.phone || extractPhone(legacyContact)).slice(0, 40),
+      contact: legacyContact.slice(0, 80),
+      address: String(payload.address || "").slice(0, 160),
       agreedNumbers: Array.isArray(payload.agreedNumbers)
         ? payload.agreedNumbers.map((item) => String(item).trim().toUpperCase()).filter(Boolean).slice(0, 20)
         : [],
@@ -558,9 +637,6 @@ async function handleApi(request, response, url) {
     if (typeof payload.deliveryQuantity === "string" && payload.deliveryQuantity.trim()) {
       order.deliveryQuantity = payload.deliveryQuantity.trim().slice(0, 80);
     }
-    if (typeof payload.shortageReason === "string" && payload.shortageReason.trim()) {
-      order.shortageReason = payload.shortageReason.trim().slice(0, 160);
-    }
     order.approvalHistory = Array.isArray(order.approvalHistory) ? order.approvalHistory : [];
     const byMap = {
       assistant: "业务员",
@@ -576,7 +652,6 @@ async function handleApi(request, response, url) {
       at: new Date().toISOString(),
       by: byMap[status] || "处理",
       deliveryQuantity: order.deliveryQuantity || "",
-      shortageReason: order.shortageReason || "",
     });
     await writeOrders(orders);
     sendJson(response, 200, order);

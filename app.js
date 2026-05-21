@@ -1,7 +1,7 @@
 const categories = ["全部", "黄色系", "红色系", "紫色系", "橙色系", "蓝色系", "黑色系"];
 const packageOptions = ["60公斤", "1公斤", "5公斤", "25公斤", "自定义"];
 
-const dishes = [
+const defaultDishRows = [
   ["y102", "柠檬黄", "Y-102", "黄色系", "#ffe900", "3%", "S", "4", "4.5", "4", "4", true],
   ["y103", "嫩黄", "Y-103", "黄色系", "#ffd600", "3%", "SE", "4", "4", "4", "4", false],
   ["y106", "荧光黄", "Y-106", "黄色系", "#fff45c", "3%", "S", "4", "4", "4", "4", true],
@@ -28,22 +28,47 @@ const dishes = [
   ["k803", "黑", "K-803", "黑色系", "#060606", "6%", "SE", "3", "4", "3-4", "4", false],
   ["k805", "黑", "K-805", "黑色系", "#080808", "6%", "SE", "3", "4", "3-4", "4", false],
   ["k900", "黑", "K-900", "黑色系", "#020202", "6%", "SE", "3", "4", "3-4", "4", false],
-].map(([id, color, number, category, hex, deep, type, washing, rubbing, sublimation, light, hot]) => ({
-  id,
-  name: `${color} ${number}`,
-  color,
-  number,
-  category,
-  price: 0,
-  hot,
-  icon: number,
-  gradient: `linear-gradient(135deg, ${hex}, ${hex})`,
-  desc: `类型 ${type} · 牢度：洗涤 ${washing}，摩擦 ${rubbing}，升华/180度 ${sublimation}，日晒 ${light}`,
-  specs: packageOptions,
-  deep,
-  type,
-  fastness: { washing, rubbing, sublimation, light },
-}));
+];
+
+function makeDish(row) {
+  const [id, color, number, category, hex = "#8b8b8b", deep = "3%", type = "S", washing = "4", rubbing = "4", sublimation = "4", light = "4", hot = false] = row;
+  return {
+    id,
+    name: `${color} ${number}`,
+    color,
+    number,
+    category,
+    price: 0,
+    hot,
+    icon: number,
+    gradient: `linear-gradient(135deg, ${hex}, ${hex})`,
+    desc: `类型 ${type} · 牢度：洗涤 ${washing}，摩擦 ${rubbing}，升华/180度 ${sublimation}，日晒 ${light}`,
+    specs: packageOptions,
+    deep,
+    type,
+    fastness: { washing, rubbing, sublimation, light },
+  };
+}
+
+let dishes = defaultDishRows.map((row) => makeDish(row));
+
+function applyCustomProducts(products = []) {
+  const customRows = products.map((product) => [
+    product.id || product.number.toLowerCase(),
+    product.color,
+    product.number,
+    product.category || "其他",
+    "#8b8b8b",
+    "3%",
+    "S",
+    "4",
+    "4",
+    "4",
+    "4",
+    false,
+  ]);
+  dishes = [...defaultDishRows, ...customRows].map((row) => makeDish(row));
+}
 
 const state = {
   category: "全部",
@@ -117,6 +142,10 @@ function getUnitPrice(dish) {
 function getSpecKg(spec) {
   const match = String(spec).match(/(\d+(?:\.\d+)?)\s*(kg|公斤)/i);
   return match ? Number(match[1]) : 0;
+}
+
+function formatWeight(kg) {
+  return `${Number(kg || 0).toLocaleString("zh-CN", { maximumFractionDigits: 2 })} 公斤`;
 }
 
 function getLineTotal(item) {
@@ -208,7 +237,11 @@ function renderDishes() {
           </label>
           <input class="custom-spec" data-role="custom-spec" type="text" placeholder="输入规格，例如 120公斤" />
           <div class="dish-action-row">
-            <span></span>
+            <div class="qty-control dish-qty-control" aria-label="${dish.name} 数量">
+              <button class="qty-button" type="button" data-card-dec="${dish.id}">−</button>
+              <input data-role="card-qty" type="number" min="1" step="1" value="1" />
+              <button class="qty-button" type="button" data-card-inc="${dish.id}">+</button>
+            </div>
             <button class="add-button" type="button" data-add="${dish.id}">加入订单</button>
           </div>
         </div>
@@ -237,7 +270,7 @@ function renderCart() {
             <strong>${getPriceText(getLineTotal(item))}</strong>
           </div>
           <div class="cart-item-footer">
-            <span>${item.qty} 份需求</span>
+            <span>总重量 ${formatWeight(getSpecKg(item.spec) * item.qty)}</span>
             <div class="qty-control" aria-label="${item.name} 数量">
               <button class="qty-button" type="button" data-dec="${item.key}">−</button>
               <span>${item.qty}</span>
@@ -253,7 +286,7 @@ function renderCart() {
   const stats = getCartStats();
   els.cartCount.textContent = stats.count;
   els.subtotal.textContent = `${stats.subtotal} 个`;
-  els.serviceFee.textContent = stats.serviceFee ? `${stats.serviceFee} 公斤` : `${stats.count} 份`;
+  els.serviceFee.textContent = formatWeight(stats.serviceFee);
   els.totalPrice.textContent = stats.total === null ? "下单后确认" : money(stats.total);
   els.submitOrder.disabled = stats.count === 0;
 }
@@ -289,14 +322,9 @@ function renderSubmittedOrders() {
           </div>
           ${order.note ? `<p class="submitted-note">备注：${escapeHtml(order.note)}</p>` : ""}
           <div class="submitted-total">
-            <span>共 ${order.count} 份需求</span>
+            <span>总重量 ${formatWeight(order.serviceFee)}</span>
             <strong>${order.total ? money(order.total) : "下单后确认"}</strong>
           </div>
-          ${
-            order.customerCode
-              ? `<a class="boss-link" href="./boss.html?customer=${encodeURIComponent(order.customerCode)}">发给老板确认</a>`
-              : ""
-          }
         </article>
       `,
     )
@@ -339,19 +367,24 @@ function renderFrequentDishes() {
 
 function renderCustomerBanner() {
   if (state.customer) {
+    const contactName = state.customer.contactName || state.customer.contact || "";
+    const phone = state.customer.phone || "";
     els.customerBanner.innerHTML = `
       <strong>${escapeHtml(state.customer.name)}</strong>
-      <span>${escapeHtml(state.customer.contact || "专属客户价格")}</span>
+      <span>${escapeHtml([contactName, phone].filter(Boolean).join(" ") || "专属客户价格")}</span>
+      ${state.customer.address ? `<small>${escapeHtml(state.customer.address)}</small>` : ""}
     `;
     if (!els.tableNo.value) {
-      els.tableNo.value = `${state.customer.name}${state.customer.contact ? ` ${state.customer.contact}` : ""}`;
+      els.tableNo.value = `${state.customer.name}${contactName ? ` ${contactName}` : ""}${phone ? ` ${phone}` : ""}`;
     }
     els.tableNo.closest(".table-box").hidden = true;
     els.lockedCustomer.hidden = false;
     els.lockedCustomer.innerHTML = `
       <span>下单客户</span>
       <strong>${escapeHtml(state.customer.name)}</strong>
-      ${state.customer.contact ? `<small>${escapeHtml(state.customer.contact)}</small>` : ""}
+      ${contactName ? `<small>${escapeHtml(contactName)}</small>` : ""}
+      ${phone ? `<small>${escapeHtml(phone)}</small>` : ""}
+      ${state.customer.address ? `<small>${escapeHtml(state.customer.address)}</small>` : ""}
     `;
     return;
   }
@@ -382,12 +415,28 @@ els.categoryTabs.addEventListener("click", (event) => {
 
 els.dishList.addEventListener("change", (event) => {
   const select = event.target.closest('select[data-role="spec"]');
-  if (!select) return;
-  const card = select.closest(".dish-card");
-  card.classList.toggle("has-custom-spec", select.value === "自定义");
+  if (select) {
+    const card = select.closest(".dish-card");
+    card.classList.toggle("has-custom-spec", select.value === "自定义");
+    return;
+  }
+
+  const qtyInput = event.target.closest('[data-role="card-qty"]');
+  if (!qtyInput) return;
+  const value = Math.max(1, Math.floor(Number(qtyInput.value) || 1));
+  qtyInput.value = value;
 });
 
 els.dishList.addEventListener("click", (event) => {
+  const qtyButton = event.target.closest("[data-card-inc], [data-card-dec]");
+  if (qtyButton) {
+    const card = qtyButton.closest(".dish-card");
+    const qtyInput = card.querySelector('[data-role="card-qty"]');
+    const nextQty = Math.max(1, Math.floor(Number(qtyInput.value) || 1) + (qtyButton.dataset.cardInc ? 1 : -1));
+    qtyInput.value = nextQty;
+    return;
+  }
+
   const button = event.target.closest("button[data-add]");
   if (!button) return;
 
@@ -405,6 +454,7 @@ els.dishList.addEventListener("click", (event) => {
   const key = cartKey(dish.id, spec);
   const existing = state.cart.get(key);
   const unitPrice = getUnitPrice(dish);
+  const qty = Math.max(1, Math.floor(Number(card.querySelector('[data-role="card-qty"]').value) || 1));
 
   state.cart.set(key, {
     key,
@@ -414,11 +464,11 @@ els.dishList.addEventListener("click", (event) => {
     price: unitPrice || 0,
     unitPrice,
     spec,
-    qty: existing ? existing.qty + 1 : 1,
+    qty: existing ? existing.qty + qty : qty,
   });
 
   renderCart();
-  showToast(`已加入订单：${dish.name}`);
+  showToast(`已加入订单：${dish.name} × ${qty}`);
 });
 
 els.frequentList.addEventListener("click", (event) => {
@@ -492,6 +542,9 @@ async function submitOrder() {
   const orderPayload = {
     customerCode: state.customer?.code || state.customerCode,
     customerName: state.customer?.name || "",
+    customerContactName: state.customer?.contactName || state.customer?.contact || "",
+    customerPhone: state.customer?.phone || "",
+    customerAddress: state.customer?.address || "",
     tableNo,
     items: [...state.cart.values()].map((item) => ({ ...item, lineTotal: getLineTotal(item) })),
     count,
@@ -544,6 +597,7 @@ async function loadConfig() {
     const config = await response.json();
     state.settings = config.settings || state.settings;
     state.customer = config.customer || null;
+    applyCustomProducts(config.products || []);
   } catch (error) {
     state.settings = { showPrices: false };
   }

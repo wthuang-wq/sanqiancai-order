@@ -44,6 +44,19 @@ function formatOrderDate(order) {
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${order.time || date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
+function getSpecKg(spec) {
+  const match = String(spec || "").match(/(\d+(?:\.\d+)?)\s*(kg|公斤)/i);
+  return match ? Number(match[1]) : 0;
+}
+
+function getOrderTotalKg(order) {
+  return (order.items || []).reduce((sum, item) => sum + getSpecKg(item.spec) * Number(item.qty || 0), 0);
+}
+
+function formatWeight(kg) {
+  return `${Number(kg || 0).toLocaleString("zh-CN", { maximumFractionDigits: 2 })} 公斤`;
+}
+
 function showToast(message) {
   els.toast.textContent = message;
   els.toast.classList.add("show");
@@ -74,9 +87,11 @@ function renderCustomer() {
   }
 
   els.orderPageLink.href = `./index.html?customer=${encodeURIComponent(state.customerCode)}`;
+  const contactName = state.customer?.contactName || state.customer?.contact || "";
+  const phone = state.customer?.phone || "";
   els.customer.innerHTML = `
     <strong>${escapeHtml(state.customer?.name || state.customerCode)}</strong>
-    <span>${escapeHtml(state.customer?.contact || "确认后订单会发给三千彩业务员")}</span>
+    <span>${escapeHtml([contactName, phone].filter(Boolean).join(" ") || "确认后订单会发给三千彩业务员")}</span>
   `;
 }
 
@@ -127,7 +142,7 @@ function renderOrders() {
           ${order.note ? `<p class="submitted-note">备注：${escapeHtml(order.note)}</p>` : ""}
 
           <div class="submitted-total">
-            <span>共 ${order.count} 份需求</span>
+            <span>总重量 ${formatWeight(order.serviceFee || getOrderTotalKg(order))}</span>
             <strong>${order.total ? money(order.total) : "下单后确认"}</strong>
           </div>
 

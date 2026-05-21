@@ -28,7 +28,9 @@
         <form id="customerForm" class="customer-form">
           <input id="customerCode" placeholder="客户编号，例如 a001" required />
           <input id="customerName" placeholder="客户名称" required />
-          <input id="customerContact" placeholder="联系人 / 手机 / 微信" />
+          <input id="customerContactName" placeholder="联系人" />
+          <input id="customerPhone" placeholder="联系电话" />
+          <input id="customerAddress" placeholder="收货地址" />
           <label class="customer-price-toggle">
             <input id="customerShowPrices" type="checkbox" />
             <span>该客户显示价格</span>
@@ -38,6 +40,30 @@
           <div class="price-editor" id="priceEditor"></div>
         </form>
         <div id="customerList" class="customer-list"></div>
+      </section>
+
+      <section class="customer-manager">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">色号维护</p>
+            <h2>产品管理</h2>
+          </div>
+        </div>
+        <form id="productForm" class="customer-form product-form">
+          <input id="productColor" placeholder="颜色名称，例如 亮绿" required />
+          <input id="productNumber" placeholder="编号，例如 G-101" required />
+          <select id="productCategory" aria-label="色系">
+            <option>黄色系</option>
+            <option>红色系</option>
+            <option>紫色系</option>
+            <option>橙色系</option>
+            <option>蓝色系</option>
+            <option>黑色系</option>
+            <option>其他</option>
+          </select>
+          <button type="submit">添加产品</button>
+        </form>
+        <div id="productList" class="product-list"></div>
       </section>
 
       <section class="admin-stats role-stats" aria-label="销售助理待办">

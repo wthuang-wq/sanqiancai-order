@@ -215,6 +215,7 @@ h2 {
 .table-box input,
 .note-box textarea,
 .customer-form input,
+.customer-form select,
 .customer-form textarea,
 .custom-spec {
   width: 100%;
@@ -228,6 +229,7 @@ h2 {
 .search-row input,
 .table-box input,
 .customer-form input,
+.customer-form select,
 .custom-spec {
   height: 44px;
   padding: 0 14px;
@@ -237,6 +239,7 @@ h2 {
 .table-box input:focus,
 .note-box textarea:focus,
 .customer-form input:focus,
+.customer-form select:focus,
 .customer-form textarea:focus,
 .custom-spec:focus {
   border-color: var(--brand);
@@ -513,6 +516,10 @@ h2 {
   background: #fbfaf6;
 }
 
+.dish-qty-control {
+  grid-template-columns: 34px 44px 34px;
+}
+
 .qty-button {
   width: 30px;
   height: 30px;
@@ -521,9 +528,28 @@ h2 {
   font-size: 20px;
 }
 
+.dish-qty-control .qty-button {
+  width: 34px;
+  height: 34px;
+}
+
 .qty-control span {
   text-align: center;
   font-weight: 800;
+}
+
+.dish-qty-control input {
+  width: 44px;
+  height: 34px;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  text-align: center;
+  font: inherit;
+  font-weight: 900;
+  outline: none;
 }
 
 .table-box,
@@ -1022,6 +1048,23 @@ h2 {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 10px;
   margin-top: 12px;
+}
+
+.product-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.product-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfaf6;
+  padding: 12px;
 }
 
 .customer-card {
