@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>出库发货 · 三千彩环保订单</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-role="stock" data-can-delete="false">
+    <main class="admin-shell role-shell">
+      <header class="admin-topbar">
+        <div class="brand-heading">
+          <img class="brand-logo" src="./logo.svg" alt="三千彩纳米新材料有限公司" />
+          <div>
+            <p class="eyebrow">仓库出库</p>
+            <h1>出库网站</h1>
+          </div>
+        </div>
+        <div class="admin-top-actions">
+          <a class="admin-link secondary-link" href="./production.html">入库网站</a>
+          <a class="admin-link secondary-link" href="./records.html">订单记录</a>
+        </div>
+      </header>
+
+      <section class="admin-stats role-stats" aria-label="仓库待办">
+        <div>
+          <span>待出库订单</span>
+          <strong id="stockCount">0</strong>
+        </div>
+      </section>
+
+      <section class="admin-orders" id="adminOrders" aria-live="polite"></section>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./admin.js"></script>
+  </body>
+</html>

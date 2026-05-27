@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>财务 · 三千彩环保订单</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-role="finance" data-can-delete="false">
+    <main class="admin-shell role-shell">
+      <header class="admin-topbar">
+        <div class="brand-heading">
+          <img class="brand-logo" src="./logo.svg" alt="三千彩纳米新材料有限公司" />
+          <div>
+            <p class="eyebrow">财务系统</p>
+            <h1>财务收款</h1>
+          </div>
+        </div>
+        <div class="admin-top-actions">
+          <a class="admin-link secondary-link" href="./summary.html">销售总结</a>
+          <a class="admin-link secondary-link" href="./records.html">订单记录</a>
+        </div>
+      </header>
+
+      <section class="customer-manager">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">收款登记</p>
+            <h2>客户付款</h2>
+          </div>
+        </div>
+        <form id="paymentForm" class="customer-form">
+          <input id="paymentCustomer" placeholder="客户名称" required />
+          <input id="paymentAmount" type="number" min="0" step="0.01" placeholder="收款金额" required />
+          <input id="paymentMethod" placeholder="付款方式，例如微信/银行" />
+          <input id="paymentNote" placeholder="备注" />
+          <button type="submit">保存收款</button>
+        </form>
+        <div id="paymentList" class="payment-list"></div>
+      </section>
+
+      <section class="customer-manager">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">结算价</p>
+            <h2>订单结算调整</h2>
+          </div>
+        </div>
+        <section class="admin-orders" id="adminOrders" aria-live="polite"></section>
+      </section>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./admin.js"></script>
+  </body>
+</html>

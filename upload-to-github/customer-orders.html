@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>我的订单 · 三千彩环保</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="admin-shell customer-order-page">
+      <header class="role-header">
+        <div class="brand-heading">
+          <img class="brand-logo" src="./logo.svg" alt="三千彩纳米新材料有限公司" />
+          <div>
+            <p class="eyebrow">订单状态 / 退货申请</p>
+            <h1>我的订单</h1>
+            <p class="role-subtitle" id="customerOrdersCustomer">正在读取订单</p>
+          </div>
+        </div>
+        <a class="top-link" id="customerOrderBackLink" href="./index.html">返回下单</a>
+      </header>
+
+      <section class="admin-card">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">订单状态</p>
+            <h2>订单记录</h2>
+          </div>
+        </div>
+        <div id="customerOrdersList" class="customer-order-list"></div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="./customer-orders.js"></script>
+  </body>
+</html>

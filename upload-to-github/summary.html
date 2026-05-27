@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>销售总结 · 三千彩环保订单</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-role="all" data-summary="true" data-can-delete="false">
+    <main class="admin-shell role-shell">
+      <header class="admin-topbar">
+        <div class="brand-heading">
+          <img class="brand-logo" src="./logo.svg" alt="三千彩纳米新材料有限公司" />
+          <div>
+            <p class="eyebrow">销售报表</p>
+            <h1>销售总结</h1>
+            <p class="cart-item-meta" id="salesIdentity"></p>
+          </div>
+        </div>
+        <div class="admin-top-actions">
+          <a class="admin-link secondary-link" id="salesBackLink" href="./sales.html">返回业务员</a>
+          <a class="admin-link secondary-link" href="./assistant.html">销售助理</a>
+          <a class="admin-link secondary-link" href="./owner.html">老板</a>
+          <a class="admin-link secondary-link" href="./finance.html">财务</a>
+        </div>
+      </header>
+
+      <section class="customer-manager sales-summary-panel">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">日 / 周 / 月</p>
+            <h2>销售总结</h2>
+          </div>
+        </div>
+        <div id="salesSummary" class="sales-summary"></div>
+      </section>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./admin.js"></script>
+  </body>
+</html>

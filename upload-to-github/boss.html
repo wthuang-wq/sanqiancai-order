@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>买方老板确认 · 三千彩环保</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="boss-shell">
+      <header class="boss-topbar">
+        <div class="brand-heading">
+          <img class="brand-logo" src="./logo.svg" alt="三千彩纳米新材料有限公司" />
+          <div>
+            <p class="eyebrow">买方内部确认</p>
+            <h1>订单确认</h1>
+          </div>
+        </div>
+        <a class="admin-link" id="orderPageLink" href="./index.html">仓库下单页</a>
+      </header>
+
+      <section class="customer-banner boss-customer" id="bossCustomer">
+        <strong>客户订单</strong>
+        <span>只显示本客户需要老板确认的订单</span>
+      </section>
+
+      <section class="boss-summary">
+        <div>
+          <span>待确认</span>
+          <strong id="bossPendingCount">0</strong>
+        </div>
+        <div>
+          <span>已提交业务员</span>
+          <strong id="bossSalesCount">0</strong>
+        </div>
+      </section>
+
+      <section class="boss-orders" id="bossOrders" aria-live="polite">
+        <div class="admin-empty">正在读取订单</div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./boss.js"></script>
+  </body>
+</html>

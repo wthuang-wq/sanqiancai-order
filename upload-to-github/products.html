@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>产品管理 · 三千彩环保订单</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-role="assistant" data-can-delete="false">
+    <main class="admin-shell role-shell">
+      <header class="admin-topbar">
+        <div class="brand-heading">
+          <img class="brand-logo" src="./logo.svg" alt="三千彩纳米新材料有限公司" />
+          <div>
+            <p class="eyebrow">销售助理</p>
+            <h1>产品管理</h1>
+          </div>
+        </div>
+        <div class="admin-top-actions">
+          <a class="admin-link secondary-link" href="./assistant.html">返回助理</a>
+          <a class="admin-link secondary-link" href="./customers.html">客户管理</a>
+        </div>
+      </header>
+
+      <section class="customer-manager">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">商品维护</p>
+            <h2>新增 / 删除产品</h2>
+          </div>
+        </div>
+        <form id="productForm" class="customer-form product-form">
+          <input id="productColor" placeholder="商品名称，例如 亮绿 / 柔软剂" required />
+          <input id="productNumber" placeholder="编号，例如 G-101" required />
+          <select id="productCategory" aria-label="商品类别"></select>
+          <button type="submit">添加产品</button>
+          <input id="newProductCategory" placeholder="新增类别，例如 固色剂" />
+          <button class="secondary-form-button" id="addProductCategory" type="button">添加类别</button>
+        </form>
+        <div id="productList" class="product-list"></div>
+      </section>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./admin.js"></script>
+  </body>
+</html>

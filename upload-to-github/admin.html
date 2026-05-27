@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>三千彩环保 · 特凯隆色浆订购后台</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-role="all">
+    <main class="admin-shell">
+      <header class="admin-topbar">
+        <div class="brand-heading">
+          <img class="brand-logo" src="./logo.svg" alt="三千彩纳米新材料有限公司" />
+          <div>
+            <p class="eyebrow">特凯隆 · 色浆订单</p>
+            <h1>三千彩环保系统管理</h1>
+          </div>
+        </div>
+        <div class="admin-top-actions">
+          <button class="admin-link secondary-link" id="copyBackup" type="button">复制备份数据</button>
+          <button class="admin-link secondary-link" id="copyCsv" type="button">复制Excel数据</button>
+          <a class="admin-link secondary-link" href="./records.html">订单记录</a>
+          <a class="admin-link" href="./index.html">客户下单页</a>
+        </div>
+      </header>
+
+      <section class="admin-controls">
+        <label class="price-toggle">
+          <input id="showPrices" type="checkbox" />
+          <span>前台显示价格</span>
+        </label>
+      </section>
+
+      <section class="customer-manager">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">客户二维码 / 专属单价</p>
+            <h2>客户管理</h2>
+          </div>
+        </div>
+        <form id="customerForm" class="customer-form">
+          <input id="customerCode" placeholder="客户编号，例如 a001" required />
+          <input id="customerName" placeholder="客户名称" required />
+          <input id="customerContactName" placeholder="联系人" />
+          <input id="customerPhone" placeholder="联系电话" />
+          <input id="customerAddress" placeholder="收货地址" />
+          <label class="customer-price-toggle">
+            <input id="customerShowPrices" type="checkbox" />
+            <span>该客户显示价格</span>
+          </label>
+          <button type="submit">保存客户</button>
+          <button class="secondary-form-button" type="submit" name="saveAction" value="copyOrderLink">保存本次并复制下单链接</button>
+          <div class="price-editor" id="priceEditor"></div>
+        </form>
+        <div id="customerList" class="customer-list"></div>
+      </section>
+
+      <section class="admin-stats" aria-label="订单统计">
+        <div>
+          <span>买方待确认</span>
+          <strong id="newCount">0</strong>
+        </div>
+        <div>
+          <span>业务员</span>
+          <strong id="salesCount">0</strong>
+        </div>
+        <div>
+          <span>销售助理</span>
+          <strong id="cookingCount">0</strong>
+        </div>
+        <div>
+          <span>仓库/发货</span>
+          <strong id="totalCount">0</strong>
+        </div>
+      </section>
+
+      <section class="daily-summary-panel" id="dailySummaryPanel">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">每日汇总</p>
+            <h2>今日销量</h2>
+          </div>
+          <button class="admin-link secondary-link" id="copyDailySummary" type="button">复制汇总</button>
+        </div>
+        <div class="daily-summary" id="dailySummary"></div>
+      </section>
+
+      <section class="admin-orders" id="adminOrders" aria-live="polite"></section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./admin.js"></script>
+  </body>
+</html>
