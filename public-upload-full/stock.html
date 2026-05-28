@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>库存管理 · 三千彩环保订单</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <meta http-equiv="refresh" content="0; url=./production.html" />
+  </head>
+  <body data-role="stock" data-can-delete="false">
+    <main class="admin-shell role-shell">
+      <header class="admin-topbar">
+        <div class="brand-heading">
+          <img class="brand-logo" src="./logo.svg" alt="三千彩纳米新材料有限公司" />
+          <div>
+            <p class="eyebrow">内部流程</p>
+            <h1>库存管理已并入入库网站</h1>
+          </div>
+        </div>
+        <div class="admin-top-actions">
+          <a class="admin-link secondary-link" href="./production.html">进入入库网站</a>
+          <a class="admin-link secondary-link" href="./outbound.html">出库网站</a>
+          <a class="admin-link secondary-link" href="./batch-trace.html">批号追溯</a>
+          <a class="admin-link secondary-link" href="./records.html">订单记录</a>
+        </div>
+      </header>
+
+      <section class="admin-empty">库存管理现在放在入库网站里，页面会自动跳转。</section>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./admin.js"></script>
+  </body>
+</html>

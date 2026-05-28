@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>销售助理 · 三千彩环保订单</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-role="assistant" data-can-delete="false">
+    <main class="admin-shell role-shell">
+      <header class="admin-topbar">
+        <div class="brand-heading">
+          <img class="brand-logo" src="./logo.svg" alt="三千彩纳米新材料有限公司" />
+          <div>
+            <p class="eyebrow">内部流程</p>
+            <h1>销售助理</h1>
+          </div>
+        </div>
+        <div class="admin-top-actions">
+          <a class="admin-link secondary-link" href="./customers.html">客户管理</a>
+          <a class="admin-link secondary-link" href="./products.html">产品管理</a>
+          <a class="admin-link secondary-link" href="./summary.html">销售总结</a>
+          <a class="admin-link secondary-link" href="./records.html">订单记录</a>
+        </div>
+      </header>
+
+      <section class="admin-stats role-stats" aria-label="销售助理待办">
+        <div>
+          <span>待处理订单</span>
+          <strong id="cookingCount">0</strong>
+        </div>
+      </section>
+
+      <section class="customer-manager shipment-notice-panel">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">发货通知</p>
+            <h2>最新已发货</h2>
+          </div>
+        </div>
+        <div id="shipmentNotices" class="shipment-notices"></div>
+      </section>
+
+      <section class="admin-orders" id="adminOrders" aria-live="polite"></section>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./admin.js"></script>
+  </body>
+</html>

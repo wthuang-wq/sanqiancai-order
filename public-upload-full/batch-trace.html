@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>批号追溯 · 三千彩环保订单</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-role="stock">
+    <main class="admin-shell role-shell">
+      <header class="admin-topbar">
+        <div class="brand-heading">
+          <img class="brand-logo" src="./logo.svg" alt="三千彩纳米新材料有限公司" />
+          <div>
+            <p class="eyebrow">批号召回 / 去向查询</p>
+            <h1>批号追溯</h1>
+          </div>
+        </div>
+        <div class="admin-top-actions">
+          <a class="admin-link secondary-link" href="./production.html">入库网站</a>
+          <a class="admin-link secondary-link" href="./stock.html">仓库</a>
+        </div>
+      </header>
+
+      <section class="customer-manager">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">输入批号</p>
+            <h2>查询发货去向</h2>
+          </div>
+        </div>
+        <form class="customer-form trace-form" id="traceForm">
+          <input id="traceBatch" placeholder="输入批号，例如 20260527-A01" required />
+          <button type="submit">查询</button>
+        </form>
+      </section>
+
+      <section class="admin-orders" id="traceResults" aria-live="polite"></section>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./batch-trace.js"></script>
+  </body>
+</html>

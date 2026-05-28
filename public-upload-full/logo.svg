@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 320" role="img" aria-label="三千彩纳米新材料有限公司">
+  <rect width="760" height="320" fill="#eef6d9"/>
+  <g transform="translate(300 14) scale(0.9)">
+    <path d="M40 20c54-32 126-22 161 13-60-13-112-2-157 32 45-15 99-13 145 10-55-5-109 4-157 35-19-35-16-68 8-90Z" fill="#0b65b1"/>
+    <path d="M204 80c-23 65-80 103-154 111 47-19 86-44 115-82-32 28-76 48-130 56 31-32 64-55 99-70 28-12 51-17 70-15Z" fill="#f2a000"/>
+    <path d="M37 146c26 38 78 54 136 41-51 37-119 29-153-11-12-14-17-30-14-47 10 7 21 13 31 17Z" fill="#e13b16"/>
+  </g>
+  <text x="380" y="235" text-anchor="middle" font-size="42" font-weight="800" fill="#21823e" font-family="Arial, 'Microsoft YaHei', sans-serif">三千彩纳米新材料有限公司</text>
+  <text x="380" y="270" text-anchor="middle" font-size="22" letter-spacing="2" fill="#4b8354" font-family="Arial, sans-serif">SANQIANCAINAMIXINCAILIAOYOUXIANGONGSI</text>
+</svg>
